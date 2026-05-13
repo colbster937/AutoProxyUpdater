@@ -1,0 +1,16 @@
+# AutoProxyUpdater Configuration
+
+# The URL to the PaperMC API for Velocity.
+# LEAVE EMPTY to automatically use the latest Velocity version from PaperMC.
+api-url: ""
+
+# The path to your proxy JAR file that should be replaced.
+# If left empty, the plugin will try to detect the path automatically.
+proxy-jar-path: ""
+
+# Custom User-Agent for API requests.
+user-agent: "AutoProxyUpdater/1.0 (contact@tamion.de)"
+
+# Shutdown delay in seconds after a successful update download.
+# This prevents race conditions and ensures the scheduler can exit safely.
+shutdown-delay: 3

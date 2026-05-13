@@ -1,0 +1,6 @@
+{
+  "id": "autoproxyupdater",
+  "name": "AutoProxyUpdater",
+  "version": "${version}",
+  "main": "femboys.are.cute.autoProxyUpdater.AutoProxyUpdater"
+}

@@ -50,7 +50,7 @@ public class AutoProxyUpdater {
         File oldVersionFile = dataDirectory.resolve("version.txt").toFile();
         if (oldVersionFile.exists()) oldVersionFile.delete();
 
-        String userAgent = config.get("user-agent").asText("AutoProxyUpdater/1.3 (contact@femboys.are.cute)");
+        String userAgent = config.get("user-agent").asText("AutoProxyUpdater/1.3");
         int delay = config.get("shutdown-delay").asInt(3);
 
         String manualPath = config.get("proxy-jar-path").asText("");

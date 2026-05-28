@@ -1,5 +1,18 @@
 package femboys.are.cute.autoProxyUpdater;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -11,18 +24,6 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
 @Plugin(id = "autoproxyupdater", name = "AutoProxyUpdater", version = "1.3", authors = {"FemBoysAreCut3"})
 public class AutoProxyUpdater {
@@ -72,26 +73,30 @@ public class AutoProxyUpdater {
                 logger.info("=== Proxy Update Check ({}) ===", finalApiUrl);
                 int currentBuild = config.get("internal-current-build").asInt(-1);
 
-                JsonNode root = fetchJson(finalApiUrl + "/builds", userAgent);
+                JsonNode root = fetchJson(finalApiUrl, userAgent);
                 if (root != null && root.has("builds")) {
                     JsonNode builds = root.get("builds");
-                    JsonNode latest = builds.get(builds.size() - 1);
-                    int highestBuild = latest.get("build").asInt();
+                    int highestBuild = builds.get(0).asInt();
 
                     if (highestBuild > currentBuild) {
                         logger.info("New update found: Build " + highestBuild);
-                        String fileName = latest.get("downloads").get("application").get("name").asText();
-                        String downloadUrl = finalApiUrl + "/builds/" + highestBuild + "/downloads/" + fileName;
 
-                        downloadAndReplaceJar(downloadUrl, proxyJar, userAgent);
-                        updateConfigBuild(highestBuild);
+                        JsonNode build = fetchJson(finalApiUrl + "/builds/" + highestBuild, userAgent);
+                        if (build != null && build.has("downloads")) {
+                            JsonNode download = build.get("downloads").get("server:default");
+                            String fileName = download.get("name").asText();
+                            String downloadUrl = download.get("url").asText();
 
-                        logger.warn("Shutdown in " + delay + "s to apply update...");
+                            downloadAndReplaceJar(downloadUrl, proxyJar, userAgent);
+                            updateConfigBuild(highestBuild);
 
-                        new Thread(() -> {
-                            try { Thread.sleep(delay * 1000L); } catch (InterruptedException ignored) {}
-                            server.shutdown();
-                        }).start();
+                            logger.warn("Shutdown in " + delay + "s to apply update...");
+
+                            new Thread(() -> {
+                                try { Thread.sleep(delay * 1000L); } catch (InterruptedException ignored) {}
+                                server.shutdown();
+                            }).start();
+                        }
                     } else {
                         logger.info("Proxy is up to date.");
                     }
@@ -171,14 +176,14 @@ public class AutoProxyUpdater {
 
     private String detectLatestApiUrl(String ua) {
         try {
-            JsonNode root = fetchJson("https://api.papermc.io/v2/projects/velocity", ua);
+            JsonNode root = fetchJson("https://fill.papermc.io/v3/projects/velocity", ua);
             if (root != null && root.has("versions")) {
                 JsonNode versions = root.get("versions");
-                String latestVer = versions.get(versions.size() - 1).asText();
-                return "https://api.papermc.io/v2/projects/velocity/versions/" + latestVer;
+                String latestVer = versions.get(versions.fieldNames().next()).get(0).asText();
+                return "https://fill.papermc.io/v3/projects/velocity/versions/" + latestVer;
             }
         } catch (Exception ignored) {}
-        return "https://api.papermc.io/v2/projects/velocity/versions/3.3.0-SNAPSHOT";
+        return "https://fill.papermc.io/v3/projects/velocity/versions/3.5.0-SNAPSHOT";
     }
 
     private JsonNode fetchJson(String url, String ua) throws IOException {
